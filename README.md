@@ -165,7 +165,7 @@ See [SECURITY.md](SECURITY.md). Report vulnerabilities privately, not in public 
 ## License
 
 GPL-2.0-only, the license of the Linux kernel this module is built from. See [LICENSE](LICENSE).
-Copyright (C) 2026 htjulia <htjulia1@gmail.com>.
+Copyright (C) 2026 htjulia.
 
 The kernel source and toolchain are not redistributed here; the build downloads them from
 Synology's public GPL archive. The corresponding source of every released `nvme.ko` is that
