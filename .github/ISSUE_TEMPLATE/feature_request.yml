@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a change to the build, the scripts, or the supported hardware.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before asking, check what this project has decided **not** to do ([ROADMAP.md](../blob/main/ROADMAP.md)):
+
+        | Not planned | Why |
+        |---|---|
+        | DSM Storage Manager integration (pool, volume, SSD cache) | Requires changing DSM, not the kernel |
+        | Loading the module / starting containers automatically at boot | A silent boot failure would start services on the wrong disk |
+        | Other platforms (apollolake, geminilake, …) | Newer kernels, often with official NVMe support |
+        | Distributing Synology's source or toolchain | They are on Synology's public archive |
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what stops you today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change? For a new NAS model, say which CPU platform it uses and whether it takes an M2D18.
+    validations:
+      required: true

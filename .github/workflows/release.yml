@@ -1,0 +1,84 @@
+name: release
+
+# Push a tag dsm-<version> (for example dsm-7.2-72806) to publish that DSM release.
+# The module is rebuilt from source here; if versions/<dsm>.env has VERIFIED_SHA256 the build
+# must reproduce it exactly, and the release is a normal release. Otherwise it is a pre-release
+# marked "built only — not verified on hardware".
+on:
+  push:
+    tags: ['dsm-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve DSM release
+        id: ver
+        run: |
+          dsm="${GITHUB_REF_NAME#dsm-}"
+          [ -f "versions/$dsm.env" ] || { echo "::error::no versions/$dsm.env for tag $GITHUB_REF_NAME"; exit 1; }
+          echo "dsm=$dsm" >> "$GITHUB_OUTPUT"
+      - name: Cache Synology downloads
+        uses: actions/cache@v6
+        with:
+          path: synology/dl/${{ steps.ver.outputs.dsm }}
+          key: synology-dl-${{ steps.ver.outputs.dsm }}-${{ hashFiles(format('versions/{0}.env', steps.ver.outputs.dsm)) }}
+      - name: Build
+        run: ./build.sh "${{ steps.ver.outputs.dsm }}"
+      - name: Package
+        run: scripts/package.sh "${{ steps.ver.outputs.dsm }}"
+      - name: Release notes
+        env:
+          DSM: ${{ steps.ver.outputs.dsm }}
+        run: |
+          # shellcheck disable=SC1090,SC1091
+          . "versions/$DSM.env"
+          # shellcheck disable=SC1090,SC1091
+          . "out/$DSM/inputs.env"
+          {
+            echo "nvme.ko for **DSM $DSM** (avoton, kernel \`${VERMAGIC%% *}\`)."
+            echo
+            if [ -n "${VERIFIED_SHA256:-}" ]; then
+              echo "✅ **Verified on hardware** $VERIFIED_ON — $VERIFIED_NOTE"
+              echo
+              echo "This build reproduces the verified module byte for byte."
+              echo "verified=true" >> "$GITHUB_ENV"
+            else
+              echo "⚠️ **Built only — not verified on hardware.** The build-time checks passed, but nobody has"
+              echo "loaded this module on a NAS running DSM $DSM yet. If you do, please file a hardware report."
+              echo "verified=false" >> "$GITHUB_ENV"
+            fi
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| \`nvme.ko\` sha256 | \`$MODULE_SHA256\` |"
+            echo "| vermagic | \`$VERMAGIC\` |"
+            echo "| struct module size | \`$MODSIZE\` |"
+            echo "| kernel source | [$(basename "$KERNEL_URL")]($KERNEL_URL) sha256 \`$KERNEL_SHA256\` |"
+            echo "| toolchain | [$(basename "$TOOLCHAIN_URL")]($TOOLCHAIN_URL) sha256 \`$TOOLCHAIN_SHA256\` |"
+            echo
+            echo "Install: download \`synology-avoton-nvme-$DSM.tar.gz\` and follow"
+            echo "[nas/README.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/nas/README.md)."
+            echo "Corresponding source: this tag, plus the kernel source above."
+          } > notes.md
+          cat notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DSM: ${{ steps.ver.outputs.dsm }}
+        run: |
+          flags=()
+          [ "$verified" = true ] || flags+=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" \
+            "out/$DSM/nvme.ko" "out/$DSM/nvme.ko.sha256" "out/$DSM/synology-avoton-nvme-$DSM.tar.gz" \
+            --title "DSM $DSM" --notes-file notes.md --verify-tag "${flags[@]}"

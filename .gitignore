@@ -1,0 +1,15 @@
+# Files downloaded from Synology (GPL kernel source, toolchain) and what is extracted from
+# them. Large, re-downloadable, and the build recreates them: see versions/*.env for the URLs.
+/synology/
+
+# Build output. Published modules live in GitHub Releases; versions/*.env records their sha256.
+/out/
+
+# Leftovers from the first manual session (old kernel tree, rejected v1/v2 modules).
+/legacy/
+
+# Your own NAS settings (template: nas/nvme.conf.example).
+/nas/nvme.conf
+
+.DS_Store
+*.part

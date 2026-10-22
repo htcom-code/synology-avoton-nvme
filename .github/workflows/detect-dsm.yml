@@ -1,0 +1,80 @@
+name: detect-dsm
+
+# Weekly: look for new DSM releases with an avoton kernel on Synology's archive. For each, write
+# versions/<dsm>.env, build it, pin the archive hashes, and open one pull request.
+#
+# Pull requests opened with GITHUB_TOKEN do not trigger other workflows, so ci does not run on
+# them by itself: a maintainer closes and reopens the PR (or pushes to it) to run ci.
+# Requires the repository setting "Allow GitHub Actions to create and approve pull requests".
+on:
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: detect-dsm
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Detect
+        id: detect
+        run: |
+          new=$(scripts/detect-dsm-releases.sh | tr '\n' ' ')
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "new DSM releases: ${new:-none}"
+      - name: Build each and pin hashes
+        if: steps.detect.outputs.new != ''
+        env:
+          NEW: ${{ steps.detect.outputs.new }}
+        run: |
+          : > report.md
+          for dsm in $NEW; do
+            if ./build.sh "$dsm" > "build-$dsm.log" 2>&1; then
+              # shellcheck disable=SC1090
+              . "out/$dsm/inputs.env"
+              sed -i "s/^KERNEL_SHA256=$/KERNEL_SHA256=$KERNEL_SHA256/; s/^TOOLCHAIN_SHA256=$/TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256/" "versions/$dsm.env"
+              echo "- **$dsm**: build-time checks passed — \`nvme.ko\` sha256 \`$MODULE_SHA256\`, vermagic \`$VERMAGIC\`" >> report.md
+            else
+              echo "- **$dsm**: ❌ build failed — last lines:" >> report.md
+              { echo '  ```'; tail -n 15 "build-$dsm.log" | sed 's/^/  /'; echo '  ```'; } >> report.md
+            fi
+          done
+          cat report.md
+      - name: Open pull request
+        if: steps.detect.outputs.new != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW: ${{ steps.detect.outputs.new }}
+        run: |
+          branch="chore/dsm-$(echo "$NEW" | xargs | tr ' .' '--')"
+          if gh pr list --head "$branch" --state open --json number --jq 'length' | grep -qv '^0$'; then
+            echo "a pull request for $branch is already open"; exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add versions/
+          git commit -m "chore(versions): add DSM $NEW"
+          git push -u origin "$branch"
+          {
+            echo "New DSM releases with an avoton kernel were found on Synology's archive."
+            echo
+            cat report.md
+            echo
+            echo "**Not verified on hardware.** Before merging, check \`EXPECT_VERMAGIC\` and \`EXPECT_MODSIZE\`"
+            echo "(derived or carried over automatically) on a NAS running each release if possible."
+            echo "After a hardware report, set \`VERIFIED_*\` in a follow-up PR and tag \`dsm-<version>\`."
+            echo
+            echo "_ci does not start for pull requests opened by GitHub Actions: close and reopen this PR to run it._"
+          } > body.md
+          gh pr create --base main --head "$branch" --title "chore(versions): add DSM $NEW" --body-file body.md

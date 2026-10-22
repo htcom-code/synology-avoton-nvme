@@ -1,0 +1,21 @@
+nvme: advertise FLUSH/FUA on the namespace queue
+
+The 3.10 NVMe driver (v0.8) handles REQ_FLUSH and REQ_FUA bios
+(nvme_submit_bio_queue) but never calls blk_queue_flush(), so the block
+layer strips every flush before it reaches the driver
+(block/blk-core.c "Filter flush bio's early"). fsync() then completes at
+the SSD's volatile write cache: measured 0.24 ms per 8KB dsync write
+without this change, 2.77 ms with it, on a Samsung SM961-class SSD
+behind a Synology M2D18 in a DS1517+ (DSM 7.2-72806, kernel 3.10.108).
+A database on the unpatched driver can lose committed data on power loss.
+
+--- a/drivers/block/nvme-core.c
++++ b/drivers/block/nvme-core.c
+@@ -1576,6 +1576,7 @@
+ 	queue_flag_set_unlocked(QUEUE_FLAG_NOMERGES, ns->queue);
+ 	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, ns->queue);
+ 	blk_queue_make_request(ns->queue, nvme_make_request);
++	blk_queue_flush(ns->queue, REQ_FLUSH | REQ_FUA);
+ 	ns->dev = dev;
+ 	ns->queue->queuedata = ns;
+ 

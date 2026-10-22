@@ -1,0 +1,78 @@
+name: ci
+
+# No paths filter on pull_request: ci-complete is the required check and must always report.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: shellcheck
+        run: shellcheck -x build.sh scripts/*.sh nas/*.sh
+
+  versions:
+    runs-on: ubuntu-24.04
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: list
+        run: |
+          list=$(for f in versions/*.env; do f=${f#versions/}; echo "${f%.env}"; done | sort -V | jq -R . | jq -cs .)
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          echo "DSM releases: $list"
+
+  build:
+    needs: versions
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        dsm: ${{ fromJSON(needs.versions.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache Synology downloads
+        uses: actions/cache@v6
+        with:
+          path: synology/dl/${{ matrix.dsm }}
+          key: synology-dl-${{ matrix.dsm }}-${{ hashFiles(format('versions/{0}.env', matrix.dsm)) }}
+      - name: Build
+        run: ./build.sh "${{ matrix.dsm }}"
+      - name: Package
+        run: scripts/package.sh "${{ matrix.dsm }}"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### DSM ${{ matrix.dsm }}"
+            echo '```'
+            cat "out/${{ matrix.dsm }}/inputs.env" 2>/dev/null || echo "no inputs.env (build failed early)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The single required status check. Explicitly fails if any needed job failed or was cancelled.
+  ci-complete:
+    if: always()
+    needs: [lint, versions, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "::error::a required job ended with '$r'"; exit 1 ;; esac
+          done

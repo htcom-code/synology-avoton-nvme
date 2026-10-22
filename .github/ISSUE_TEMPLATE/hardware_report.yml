@@ -1,0 +1,82 @@
+name: Hardware report
+description: You loaded a release on a real NAS. Tell us whether every check passed — this is how a release becomes "verified".
+title: "Hardware report: DSM <version> on <model>"
+labels: ["hardware-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you — reports like this are what move a release from **built only** to **verified**.
+        Run the checks from [nas/README.md](../blob/main/nas/README.md) and paste the outputs verbatim.
+        Remove serial numbers or anything else you consider private.
+  - type: input
+    id: release
+    attributes:
+      label: Release tag
+      placeholder: dsm-7.3-86009
+    validations:
+      required: true
+  - type: textarea
+    id: dsm
+    attributes:
+      label: DSM version and kernel
+      description: Output of `cat /etc.defaults/VERSION` and `uname -a`.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: NAS model, M.2 card, SSD model
+      placeholder: DS1517+, M2D18, Samsung PM981 512GB
+    validations:
+      required: true
+  - type: textarea
+    id: lspci
+    attributes:
+      label: PCIe
+      description: Output of `lspci | grep 'Class 0108'` and `lspci -t`.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: module
+    attributes:
+      label: Module checks
+      description: |
+        Outputs of:
+        `sha256sum -c nvme.ko.sha256`
+        `python3 modsize.py $(ls /lib/modules/*.ko | head -1) nvme.ko`
+        `grep -a -o -m1 'vermagic=[^[:cntrl:]]*' $(ls /lib/modules/*.ko | head -1) nvme.ko`
+        and, after `insmod nvme.ko`: `ls /sys/bus/pci/drivers/nvme/` and `dmesg | grep -i nvme`.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: flush
+    attributes:
+      label: Flush check
+      description: |
+        With the SSD mounted at /mnt/nvme:
+        `dd if=/dev/zero of=/mnt/nvme/.flushtest bs=8k count=200 oflag=dsync 2>&1 | tail -1`
+        (or the "Flush check" lines from `nvme-start.sh`). Values of a few ms are expected; about 0.2 ms means flush is not reaching the SSD.
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Overall
+      options:
+        - All checks passed and the SSD has been in use without errors
+        - All checks passed (just tested)
+        - Something failed (details above)
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: How long you have used it, workload, `pg_test_fsync` results, problems seen.
+    validations:
+      required: false

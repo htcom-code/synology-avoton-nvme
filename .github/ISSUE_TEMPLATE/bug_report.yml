@@ -1,0 +1,53 @@
+name: Bug report
+description: The build, a release, or a NAS script misbehaves.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The reports we most want: **anything that could lose data** — a dsync write that is
+        suspiciously fast, a script that mounted or started something it should not have, or a
+        check that passed when it should have failed. Put that first.
+
+        - A DSM build without a release is not a bug — the weekly detection opens a pull request for it.
+        - **Security issues:** do **not** file here — see [SECURITY.md](../blob/main/SECURITY.md).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - Loaded module on the NAS (crash, I/O errors, data integrity)
+        - nvme-start.sh / nvme-stop.sh
+        - build.sh / CI / release
+        - New DSM release detection
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release tag or commit
+      placeholder: dsm-7.2-72806 or abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Commands you ran and their output, verbatim.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: NAS model, M.2 card, SSD model, `cat /etc.defaults/VERSION`, `dmesg | grep -i nvme`. For build problems, host OS and `docker version`.
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# nvme.conf — settings for nvme-start.sh / nvme-stop.sh (sourced, bash syntax).
+# Copy to nvme.conf next to the scripts and nvme.ko, then edit.
+
+# --- Module -----------------------------------------------------------------------
+NVME_KO=nvme.ko                       # relative to this folder
+NVME_KO_SHA=nvme.ko.sha256
+EXPECT_MODSIZE=0x220                  # must equal the struct module size of DSM's own modules
+
+# --- Disk -------------------------------------------------------------------------
+NVME_DEV=/dev/nvme0n1p1
+# Filesystem UUID of the partition (blkid /dev/nvme0n1p1). The start script refuses
+# to mount anything else, so a swapped SSD is never mistaken for the old one.
+NVME_UUID=00000000-0000-0000-0000-000000000000
+# Must be an empty directory OUTSIDE /volumeN. Make it immutable while unmounted
+# (chattr +i /mnt/nvme) so nothing can write to the system partition by accident.
+MOUNTPOINT=/mnt/nvme
+
+# Flush sanity check: 200 x 8KB dsync writes. Below this per-write time the flush is
+# almost certainly not reaching the SSD (an unpatched driver measured 0.24 ms; a
+# patched one 2.77 ms on an SSD without power-loss protection). An SSD with
+# power-loss protection can legitimately be faster: measure it, then lower this.
+FLUSH_MIN_MS=1.0
+
+# --- Containers that live on the SSD -------------------------------------------------
+# Started in this order, stopped in reverse. One entry per container:
+#   "name|wait|start_timeout_s|stop_timeout_s"
+# wait:  none        — just start it
+#        pg_isready  — PostgreSQL accepts connections (also checks clean shutdown on stop)
+#        healthy     — Docker health status is "healthy"
+#        http:<url>  — the URL answers with any HTTP status
+# Containers must NOT have a restart policy: they must never start before the SSD is
+# mounted (docker update --restart=no <name>).
+SERVICES=(
+	"postgres|pg_isready|180|120"
+	"my-app|http:http://127.0.0.1:8080/|600|60"
+	"redis|none|0|30"
+)

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Applied on top of the kernel archive's synoconfigs/<platform> before building.
+# One CONFIG_X=value per line; the build checks that every line survives olddefconfig.
+
+# The NVMe block driver is not built for avoton at all ("# CONFIG_BLK_DEV_NVME is not set").
+CONFIG_BLK_DEV_NVME=m
+
+# The published synoconfigs/avoton says MODULE_SIG is off, but the shipped DSM kernel has it
+# on (dmesg prints "module verification failed" only when it is set). It adds `bool sig_ok`
+# to struct module; built without it, the kernel reads init() at the wrong offset and the
+# module loads but silently does nothing. EXPECT_MODSIZE in versions/*.env catches this.
+CONFIG_MODULE_SIG=y
