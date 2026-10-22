@@ -37,6 +37,12 @@ Not affiliated with Synology Inc. "Synology", "DSM" and model names are trademar
 One GitHub release per DSM build, tagged `dsm-<version>`. Each holds `nvme.ko`, its sha256,
 and an archive with the NAS scripts. The source of truth is `versions/<dsm>.env`.
 
+A published release is never replaced. A fix to the module or the NAS scripts ships as a
+revision, `dsm-<version>-r2`, `-r3` and so on, which becomes the current release for that DSM
+build; the earlier release stays downloadable and gets a notice pointing to the revision. If
+a fix changes `nvme.ko`, its sha256 no longer matches `VERIFIED_SHA256`, so the revision is
+published as a pre-release until the new module is verified on hardware again.
+
 | DSM | Kernel | Hardware verified | Notes |
 |---|---|---|---|
 | 7.2-72806 | 3.10.108 | ✅ 2026-10-22 | DS1517+ + M2D18, Samsung SM961-class SSD |
@@ -137,6 +143,9 @@ opens a pull request. By hand it is the same:
    ```
 5. After the module passes the checks in [nas/README.md](nas/README.md), including the flush
    check, set `VERIFIED_SHA256`, `VERIFIED_ON` and `VERIFIED_NOTE`, then tag `dsm-<version>`.
+
+To ship a fix for a release that is already published, merge the fix, tag the next revision
+(`dsm-<version>-r<N>`) on `main`, and add a notice to the top of the superseded release.
 
 ## Repository layout
 
