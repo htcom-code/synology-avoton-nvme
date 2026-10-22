@@ -1,6 +1,8 @@
 name: release
 
 # Push a tag dsm-<version> (for example dsm-7.2-72806) to publish that DSM release.
+# A fix to an already published DSM release goes out as a revision tag dsm-<version>-r<N>
+# (N >= 2, for example dsm-7.2-72806-r2); published tags are never moved or reused.
 # The module is rebuilt from source here; if versions/<dsm>.env has VERIFIED_SHA256 the build
 # must reproduce it exactly, and the release is a normal release. Otherwise it is a pre-release
 # marked "built only — not verified on hardware".
@@ -25,9 +27,19 @@ jobs:
       - name: Resolve DSM release
         id: ver
         run: |
-          dsm="${GITHUB_REF_NAME#dsm-}"
+          if [[ "$GITHUB_REF_NAME" =~ ^dsm-(.+)-r([0-9]+)$ ]]; then
+            dsm="${BASH_REMATCH[1]}" rev="${BASH_REMATCH[2]}"
+            if [[ ! "$rev" =~ ^[1-9][0-9]*$ ]] || [ "$rev" -lt 2 ]; then
+              echo "::error::revision must be r2 or higher (the plain tag is r1): $GITHUB_REF_NAME"
+              exit 1
+            fi
+            title="DSM $dsm (r$rev)"
+          else
+            dsm="${GITHUB_REF_NAME#dsm-}" rev=1
+            title="DSM $dsm"
+          fi
           [ -f "versions/$dsm.env" ] || { echo "::error::no versions/$dsm.env for tag $GITHUB_REF_NAME"; exit 1; }
-          echo "dsm=$dsm" >> "$GITHUB_OUTPUT"
+          { echo "dsm=$dsm"; echo "rev=$rev"; echo "title=$title"; } >> "$GITHUB_OUTPUT"
       - name: Cache Synology downloads
         uses: actions/cache@v6
         with:
@@ -40,6 +52,7 @@ jobs:
       - name: Release notes
         env:
           DSM: ${{ steps.ver.outputs.dsm }}
+          REV: ${{ steps.ver.outputs.rev }}
         run: |
           # shellcheck disable=SC1090,SC1091
           . "versions/$DSM.env"
@@ -48,6 +61,11 @@ jobs:
           {
             echo "nvme.ko for **DSM $DSM** (avoton, kernel \`${VERMAGIC%% *}\`)."
             echo
+            if [ "$REV" -gt 1 ]; then
+              echo "Revision **r$REV** — supersedes the earlier releases for DSM $DSM; see"
+              echo "[CHANGELOG.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/CHANGELOG.md) for what changed."
+              echo
+            fi
             if [ -n "${VERIFIED_SHA256:-}" ]; then
               echo "✅ **Verified on hardware** $VERIFIED_ON — $VERIFIED_NOTE"
               echo
@@ -76,9 +94,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DSM: ${{ steps.ver.outputs.dsm }}
+          TITLE: ${{ steps.ver.outputs.title }}
         run: |
           flags=()
           [ "$verified" = true ] || flags+=(--prerelease)
           gh release create "$GITHUB_REF_NAME" \
             "out/$DSM/nvme.ko" "out/$DSM/nvme.ko.sha256" "out/$DSM/synology-avoton-nvme-$DSM.tar.gz" \
-            --title "DSM $DSM" --notes-file notes.md --verify-tag "${flags[@]}"
+            --title "$TITLE" --notes-file notes.md --verify-tag "${flags[@]}"

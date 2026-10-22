@@ -4,12 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Module releases are tagged per DSM build (`dsm-<version>`), not with SemVer: a module is only
-valid for the exact kernel it was built against. This file records changes to the build, the
+valid for the exact kernel it was built against. A fix to a published release is tagged as a
+revision, `dsm-<version>-r<N>`. This file records changes to the build, the
 patches and the NAS scripts.
 
 ## [Unreleased]
 
 ### Added
+
+- Revision releases: a `dsm-<version>-r<N>` tag (N >= 2) republishes a DSM release with fixes
+  instead of moving or reusing the published tag.
 
 - `build.sh`: builds `nvme.ko` for a DSM release on the avoton platform from Synology's GPL
   kernel source and toolchain, inside a pinned Docker image, with fail-closed checks
