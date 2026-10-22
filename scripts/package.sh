@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # package.sh <ver> — bundle a built module with the NAS scripts into
 # out/<ver>/synology-avoton-nvme-<ver>.tar.gz (the release asset).

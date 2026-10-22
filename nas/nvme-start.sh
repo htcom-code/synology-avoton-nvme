@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # nvme-start.sh — after a NAS boot: load nvme.ko, mount the NVMe SSD, check that
 # flush reaches the SSD, then start the containers listed in nvme.conf in order.

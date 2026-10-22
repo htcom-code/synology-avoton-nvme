@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # nvme-stop.sh — before a NAS shutdown or reboot: stop the containers from nvme.conf
 # in reverse order, check that nothing still uses the SSD, then unmount it and
