@@ -23,7 +23,7 @@ Delete sections that do not apply. PRs are squash-merged: this description becom
 
 ## Verification
 
-- [ ] `shellcheck -x build.sh scripts/*.sh nas/*.sh`
+- [ ] shellcheck v0.11.0 (command in CONTRIBUTING.md)
 - [ ] `./build.sh <dsm>` for every release touched (paste the sha256)
 - [ ] For NAS script changes: run on a NAS, paste the output
 

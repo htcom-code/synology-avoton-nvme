@@ -37,7 +37,7 @@ that is built but not yet verified — see [Hardware reports](#hardware-reports)
 ## Check locally — the same as CI
 
 ```sh
-shellcheck -x build.sh scripts/*.sh nas/*.sh
+docker run --rm -v "$PWD":/mnt -w /mnt koalaman/shellcheck:v0.11.0 -x build.sh scripts/*.sh nas/*.sh
 ./build.sh <dsm>            # for every release you touched
 ```
 

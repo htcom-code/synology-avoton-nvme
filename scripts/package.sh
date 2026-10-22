@@ -10,7 +10,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 VER=${1:?usage: scripts/package.sh <dsm-version>}
 OUT=out/$VER
-[ -s "$OUT/nvme.ko" ] && [ -s "$OUT/nvme.ko.sha256" ] || { echo "FAIL: build $VER first (./build.sh $VER)" >&2; exit 1; }
+if [ ! -s "$OUT/nvme.ko" ] || [ ! -s "$OUT/nvme.ko.sha256" ]; then
+	echo "FAIL: build $VER first (./build.sh $VER)" >&2
+	exit 1
+fi
 
 NAME=synology-avoton-nvme-$VER
 STAGE=$(mktemp -d)
