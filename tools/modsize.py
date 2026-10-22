@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 import struct, sys
 # Print the size of .gnu.linkonce.this_module (== sizeof(struct module) the module was built for)
 for path in sys.argv[1:]:

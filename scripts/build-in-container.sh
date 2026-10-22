@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # Runs INSIDE the debian:bookworm (linux/amd64) container started by ../build.sh.
 # Mounts: /k = fresh kernel tree (rw), /tc = toolchain (ro), /p = patches for this kernel

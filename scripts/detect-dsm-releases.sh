@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # detect-dsm-releases.sh — look for DSM releases on Synology's GPL archive that ship an
 # avoton kernel and a matching toolchain but have no versions/<ver>.env yet, and write one

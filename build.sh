@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (C) 2026 htjulia <htjulia1@gmail.com>
+# Copyright (C) 2026 htjulia
 #
 # build.sh — build nvme.ko for a Synology DSM release on the avoton platform.
 #
