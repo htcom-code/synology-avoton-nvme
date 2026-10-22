@@ -21,8 +21,9 @@ sha256() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum 
 
 list_versions() { for f in versions/*.env; do f=${f#versions/}; echo "${f%.env}"; done | sort -V; }
 DSM_VER=${1:-$(list_versions | tail -1)}
-[ -n "$DSM_VER" ] && [ -f "versions/$DSM_VER.env" ] \
-	|| fail "no versions/${DSM_VER:-<ver>}.env (available: $(list_versions | tr '\n' ' '))"
+if [ -z "$DSM_VER" ] || [ ! -f "versions/$DSM_VER.env" ]; then
+	fail "no versions/${DSM_VER:-<ver>}.env (available: $(list_versions | tr '\n' ' '))"
+fi
 KERNEL_SHA256='' TOOLCHAIN_SHA256='' VERIFIED_SHA256=''
 # shellcheck source=versions/7.2-72806.env
 . "versions/$DSM_VER.env"

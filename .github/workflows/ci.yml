@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      # Pinned image, not the runner's shellcheck: versions disagree on what they flag.
       - name: shellcheck
-        run: shellcheck -x build.sh scripts/*.sh nas/*.sh
+        run: docker run --rm -v "$PWD":/mnt -w /mnt koalaman/shellcheck:v0.11.0 -x build.sh scripts/*.sh nas/*.sh
 
   versions:
     runs-on: ubuntu-24.04

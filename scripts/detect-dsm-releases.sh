@@ -30,7 +30,10 @@ candidates=$(page "$ARCHIVE/Synology%20NAS%20GPL%20Source" \
 	| sed 's#.*/##; s#"$##' | sort -uV)
 
 for ver in $candidates; do
-	[ "$(printf '%s\n%s\n' "$newest" "$ver" | sort -V | tail -1)" = "$ver" ] && [ "$ver" != "$newest" ] || continue
+	# only releases newer than the newest one we already have
+	if [ "$ver" = "$newest" ] || [ "$(printf '%s\n%s\n' "$newest" "$ver" | sort -V | tail -1)" != "$ver" ]; then
+		continue
+	fi
 	[ -f "versions/$ver.env" ] && continue
 
 	kernel_url=$(page "$ARCHIVE/Synology%20NAS%20GPL%20Source/$ver" \
