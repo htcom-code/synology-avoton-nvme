@@ -72,6 +72,9 @@ Then follow [nas/README.md](nas/README.md): first load, formatting, mount point,
 the `nvme-start.sh` / `nvme-stop.sh` scripts you run after every boot and before every
 shutdown. Nothing loads automatically.
 
+Not comfortable with scripts? [Quick manual loading](nas/README.md#quick-manual-loading) walks
+through the same checks one command at a time, with the expected output for each step.
+
 ## What this works around
 
 Three things stand between the hardware and a usable NVMe volume. All three were found on a

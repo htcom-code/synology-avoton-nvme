@@ -12,6 +12,8 @@ patches and the NAS scripts.
 
 ### Added
 
+- `nas/README.md`: "Quick manual loading", a step-by-step guide that loads the module and
+  mounts the SSD by hand, with the expected result of every check and what to do when it fails.
 - Revision releases: a `dsm-<version>-r<N>` tag (N >= 2) republishes a DSM release with fixes
   instead of moving or reusing the published tag.
 
